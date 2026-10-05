@@ -8,8 +8,10 @@ import org.example.aispingboot.DTO.command.UserRegisterCommandDTO;
 import org.example.aispingboot.DTO.command.UserUpdateCommandDTO;
 import org.example.aispingboot.DTO.response.UserLoginResponseDTO;
 import org.example.aispingboot.common.Result;
+import org.example.aispingboot.service.TokenBlacklistService;
 import org.example.aispingboot.service.UserService;
 import org.example.aispingboot.util.JwtTokenUtil;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -17,6 +19,9 @@ import org.springframework.web.bind.annotation.*;
 public class UserController {
     @Resource
     private UserService userService;
+
+    @Resource
+    private TokenBlacklistService tokenBlacklistService;
 
     // 用户登录接口
     @PostMapping("/login")
@@ -52,6 +57,28 @@ public class UserController {
     public Result<UserLoginResponseDTO.UserDetailResponseDTO> updateUser(@Valid @RequestBody UserUpdateCommandDTO commandDTO) {
         UserLoginResponseDTO.UserDetailResponseDTO result = userService.updateUser(commandDTO);
         return Result.ok(result);
+    }
+
+    // 用户退出登录接口
+    @PostMapping("/logout")
+    public Result<?> logout() {
+
+        // 从token中解析出用户的id
+        String token = JwtTokenUtil.getCurrentToken();
+        if(token != null) {
+            // 获取token过期时间
+            // 1440分钟
+            long expireMinutes = JwtTokenUtil.getExpireMinutes(token);
+            if(expireMinutes > 0) {
+                tokenBlacklistService.addBlacklist(token, expireMinutes);
+            }
+        }
+        // 清除security context
+        SecurityContextHolder.clearContext();
+
+
+        // 调用服务层退出登录方法
+        return Result.ok();
     }
 
 

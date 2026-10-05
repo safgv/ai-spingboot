@@ -10,6 +10,7 @@ import org.example.aispingboot.DTO.response.UserLoginResponseDTO;
 import org.example.aispingboot.common.ResultCode;
 import org.example.aispingboot.config.SecurityConfig;
 import org.example.aispingboot.enumClass.UserStatus;
+import org.example.aispingboot.service.TokenBlacklistService;
 import org.example.aispingboot.service.UserService;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -21,9 +22,14 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 
+
 public class JwtAuthticationFilter extends OncePerRequestFilter {  //请求过滤器，用于在请求处理前进行JWT认证检查是否需要认证，OncePerRequestFilter表示每一个HTTP请求只执行一次
     @Resource
     private UserService userService;
+
+    @Resource
+    private TokenBlacklistService tokenBlacklistService;
+
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
         String requestUri = request.getRequestURI();
@@ -52,7 +58,18 @@ public class JwtAuthticationFilter extends OncePerRequestFilter {  //请求过�
                 "token=" + token
         );
         if (StringUtils.hasText(token)) {
-            // 2. 验证token并获取用户信息
+
+            // 2. 检查token是否在黑名单中
+            if(tokenBlacklistService.isBlacklist(token)) {
+                clearSecurityContext();
+                ResponseUtil.writeError(
+                        response,
+                        ResultCode.TOKEN_INVALID
+                );
+                return;
+            }
+
+            // 3. 验证token并获取用户信息
             JwtTokenUtil.TokenVerificationResult validationResult = JwtTokenUtil.validateToken(token);  //验证token是否有效，返回验证结果，是封装后的类，包含了userId、username、roleType等信息
             System.out.println(
                     "验证结果=" + validationResult

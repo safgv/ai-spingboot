@@ -145,4 +145,19 @@ public class JwtTokenUtil implements ApplicationContextAware {
             this.valid = valid;
         }
     }
+
+    public static long getExpireMinutes(String token){
+
+        DecodedJWT jwt = verifyToken(token);
+
+        Date expiresAt = jwt.getExpiresAt();
+
+        long millis =
+                expiresAt.getTime()
+                        - System.currentTimeMillis();
+
+
+        return millis / 1000 / 60;
+
+    }
 }
