@@ -7,6 +7,7 @@ import jakarta.annotation.Resource;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 
@@ -121,6 +122,32 @@ public class RedisService {
         return value == null ?
                 null :
                 value.toString();
+
+    }
+
+    public void leftPush(
+            String key,
+            Object value
+    ){
+
+        redisTemplate.opsForList()
+                .leftPush(
+                        key,
+                        value
+                );
+
+    }
+
+    public List<Object> getList(
+            String key
+    ){
+
+        return redisTemplate.opsForList()
+                .range(
+                        key,
+                        0,
+                        -1
+                );
 
     }
 
