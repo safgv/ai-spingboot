@@ -153,7 +153,7 @@ public class RedisChatMemoryRepository
 
         }
 
-        System.out.println("==============================");
+        System.out.println("==============================完");
 
         String key =
                 KEY_PREFIX + conversationId;
