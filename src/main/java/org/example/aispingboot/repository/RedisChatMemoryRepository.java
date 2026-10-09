@@ -49,6 +49,11 @@ public class RedisChatMemoryRepository
             String conversationId
     ){
 
+        System.out.println(
+                "读取Redis聊天记录:"
+                        + conversationId
+        );
+
         String key =
                 KEY_PREFIX + conversationId;
 
@@ -130,6 +135,25 @@ public class RedisChatMemoryRepository
             String conversationId,
             List<Message> messages
     ){
+
+        System.out.println("==============================");
+        System.out.println("进入 RedisChatMemoryRepository.saveAll()");
+        System.out.println("conversationId = " + conversationId);
+        System.out.println("消息数量 = " + messages.size());
+
+        for(Message message : messages){
+
+            System.out.println(
+                    "消息类型 = "
+                            + message.getMessageType()
+                            +
+                            " 内容 = "
+                            + message.getText()
+            );
+
+        }
+
+        System.out.println("==============================");
 
         String key =
                 KEY_PREFIX + conversationId;
