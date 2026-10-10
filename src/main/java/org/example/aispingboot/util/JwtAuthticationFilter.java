@@ -1,15 +1,16 @@
 package org.example.aispingboot.util;
 
-import cn.hutool.json.JSONUtil;
 import jakarta.annotation.Resource;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.extern.slf4j.Slf4j;
 import org.example.aispingboot.DTO.response.UserLoginResponseDTO;
 import org.example.aispingboot.common.ResultCode;
 import org.example.aispingboot.config.SecurityConfig;
 import org.example.aispingboot.enumClass.UserStatus;
+import org.example.aispingboot.service.TokenBlacklistService;
 import org.example.aispingboot.service.UserService;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -21,17 +22,19 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 
+@Slf4j
 public class JwtAuthticationFilter extends OncePerRequestFilter {  //请求过滤器，用于在请求处理前进行JWT认证检查是否需要认证，OncePerRequestFilter表示每一个HTTP请求只执行一次
     @Resource
     private UserService userService;
+
+    @Resource
+    private TokenBlacklistService tokenBlacklistService;
+
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
         String requestUri = request.getRequestURI();
         // 检查是否为公开路径
-        System.out.println(
-                "shouldNotFilter:"
-                        + request.getRequestURI()
-        );
+        log.debug("请求跳过JWT过滤:{}", requestUri);
         return SecurityConfig.isPublicPATH(requestUri);
     }
 
@@ -43,24 +46,40 @@ public class JwtAuthticationFilter extends OncePerRequestFilter {  //请求过�
         // 获取请求的URI和方法
         String requestUri = request.getRequestURI();
         String method = request.getMethod();
-        System.out.println(requestUri);
-        System.out.println(method);
+        log.debug("请求路径={}, 方法={}", requestUri, method);
         //Jwt认证流程八个步骤
         // 1. 提取 JWT token
         String token = JwtTokenUtil.extractTokenFromRequest(request);
-        System.out.println(
-                "token=" + token
-        );
         if (StringUtils.hasText(token)) {
-            // 2. 验证token并获取用户信息
+
+            // 2. 检查token是否在黑名单中
+            if(tokenBlacklistService.isBlacklist(token)) {
+                clearSecurityContext();
+                ResponseUtil.writeError(
+                        response,
+                        ResultCode.TOKEN_INVALID
+                );
+                return;
+            }
+
+            // 3. 验证token并获取用户信息
             JwtTokenUtil.TokenVerificationResult validationResult = JwtTokenUtil.validateToken(token);  //验证token是否有效，返回验证结果，是封装后的类，包含了userId、username、roleType等信息
-            System.out.println(
-                    "验证结果=" + validationResult
-            );
+            if(validationResult != null){
+
+                log.debug(
+                        "JWT验证,userId={},username={},valid={}",
+                        validationResult.getUserId(),
+                        validationResult.getUsername(),
+                        validationResult.isValid()
+                );
+
+            }
             if (validationResult != null && validationResult.isValid()) {
                 // 3. 根据userId查询数据库中的用户信息
                 UserLoginResponseDTO.UserDetailResponseDTO user = userService.getUserById(validationResult.getUserId()); //根据userId查询数据库中的用户信息
-                System.out.println(JSONUtil.parseObj(user));
+                if(user != null){
+                    log.debug("用户认证成功,userId={}", user.getId());
+                }
                 if (user != null && UserStatus.NORMAL.getCode().equals(user.getStatus())) {
                     // 4. 创建Spring Security认证对象
                     List<SimpleGrantedAuthority> authorities = Collections.singletonList(  //创建SimpleGrantedAuthority对象，用于Spring Security权限校验

@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 public class ConsultationMessageService {
@@ -88,5 +89,39 @@ public class ConsultationMessageService {
         responseDTO.calculateContentLength();
 
         return responseDTO;
+    }
+
+    /**
+     * 根据会话ID删除所有聊天消息
+     */
+    public void deleteBySessionId(Long sessionId){
+
+        LambdaQueryWrapper<ConsultationMessage> wrapper =
+                new LambdaQueryWrapper<>();
+
+        wrapper.eq(
+                ConsultationMessage::getSessionId,
+                sessionId
+        );
+
+        consultationMessageMapper.delete(wrapper);
+
+    }
+
+    public List<ConsultationMessageResponseDTO> getMessagesBySessionId(
+            Long sessionId
+    ){
+
+        LambdaQueryWrapper<ConsultationMessage> wrapper = new LambdaQueryWrapper<>();
+
+        wrapper.eq(ConsultationMessage::getSessionId, sessionId);
+
+        wrapper.orderByAsc(ConsultationMessage::getCreatedAt);
+
+        List<ConsultationMessage> messages = consultationMessageMapper.selectList(wrapper);
+
+        return messages.stream()
+                .map(this::convertToResponseDTO)
+                .toList();
     }
 }

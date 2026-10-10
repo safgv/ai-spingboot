@@ -1,5 +1,7 @@
 package org.example.aispingboot.config;
 
+import jakarta.annotation.Resource;
+import org.example.aispingboot.repository.RedisChatMemoryRepository;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
 import org.springframework.ai.chat.memory.ChatMemory;
@@ -10,9 +12,14 @@ import org.springframework.context.annotation.Configuration;
 
 @Configuration
 public class ChatClientConfig {
+
+    @Resource
+    private RedisChatMemoryRepository redisChatMemoryRepository;
+
     @Bean
     public ChatMemory chatMemory() {  //ai的对话记忆管理，用于记录当前会话的上下文
         return MessageWindowChatMemory.builder()
+                .chatMemoryRepository(redisChatMemoryRepository)
                 .maxMessages(30) // 保留最新30条消息
                 .build();//创建MessageWindowChatMemory对象，用于记录当前会话的上下文,放入IOC容器
     }

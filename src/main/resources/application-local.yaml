@@ -12,17 +12,14 @@ spring:
 
   ai:
     openai:
-      api-key: sk-1c44c8243fbd475ca67420ebe3ec4d46  #你的api-key，去硅基流动平台申请
-      base-url: https://api.deepseek.com
-
       chat:
         options:
-          model: deepseek-chat
-          temperature: 0.7
+          model: deepseek-ai/DeepSeek-V3
           tool-calling:
             enabled: true
-
-
+        completions-path: /v1/chat/completions
+      api-key: sk-1c44c8243fbd475ca67420ebe3ec4d46  #你的api-key，去硅基流动平台申请
+      base-url: https://api.deepseek.com/v1   #deepseek的api地址
       #硅基的api地址https://api.siliconflow.cn
 # 服务器配置
 server:

@@ -1,6 +1,7 @@
 package org.example.aispingboot.config;
 
 import cn.hutool.core.text.AntPathMatcher;
+import jakarta.servlet.DispatcherType;
 import org.example.aispingboot.util.JwtAuthticationFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -47,6 +48,12 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 // 配置请求的授权规则
                 .authorizeHttpRequests(auth -> auth
+                        // SSE异步和错误转发允许继续
+                        .dispatcherTypeMatchers(
+                                DispatcherType.ASYNC,
+                                DispatcherType.ERROR,
+                                DispatcherType.FORWARD
+                        ).permitAll()
                         // 公开的路径，无需登录即可访问
                         .requestMatchers(PUBLIC_PATHS).permitAll()
                         // 其他请求都需要认证

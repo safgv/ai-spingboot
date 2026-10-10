@@ -37,7 +37,7 @@ public class UserService {
         // 调用MP API查询
         // 用user对象来接收查询结果
         User user = userMapper.selectOne(queryWrapper);
-        System.out.println(user);
+        log.info("用户登录查询完成,username={}", commandDTO.getUsername());
 
         // 判断用户是否存在
         if (user == null) {
@@ -56,13 +56,13 @@ public class UserService {
 
         // 生成JWT token
         String token = JwtTokenUtil.generateToken(user.getId(), user.getUsername(), user.getUserType());
-        System.out.println(token);
+        log.info("用户登录成功,userId={}", user.getId());
         UserLoginResponseDTO.UserDetailResponseDTO userInfo = UserConvert.entityToDetailResponse(user);
         return UserConvert.entityToLoginResponse(token, userInfo);  //返回登录响应DTO
     }
 
     public UserLoginResponseDTO.UserDetailResponseDTO register(UserRegisterCommandDTO commandDTO) {
-        System.out.println(JSONUtil.parseObj(commandDTO));  // 打印commandDTO，用于调试，方便开发者查看前端传来的数据
+        log.info("用户注册请求,username={}", commandDTO.getUsername()); // 打印用户名,用于调试,方便开发者查看前端传来的数据
         // 验证密码是否一致
         if (!commandDTO.getPassword().equals(commandDTO.getConfirmPassword())) {
             throw new BusinessException("两次输入密码不一致");
@@ -114,7 +114,7 @@ public class UserService {
             //3. 从缓存中获取用户详情,正常返回
             userInfo = userCacheService.getUser(userId);//convertUser()方法将缓存中的用户详情转换为UserLoginResponseDTO.UserDetailResponseDTO
             // 打印缓存中的用户详情,用于调试,方便开发者查看缓存中的数据
-            log.info("Redis缓存命中,userId={}", userId);
+            log.debug("Redis缓存命中,userId={}", userId);
             return userInfo;
 
         }
@@ -163,13 +163,16 @@ public class UserService {
 
 
         //4. 删除Redis缓存
-        userCacheService.deleteUser(user.getId());//Entity 才是数据库真实对象,所以需要根据Entity中的id删除缓存中的用户详情
+        //userCacheService.deleteUser(user.getId());//Entity 才是数据库真实对象,所以需要根据Entity中的id删除缓存中的用户详情
 
         //5.数据库更新后重新查询用户详情
         User latestUser = userMapper.selectById(commandDTO.getId());
 
+        UserLoginResponseDTO.UserDetailResponseDTO result = UserConvert.entityToDetailResponse(latestUser);
 
-        return UserConvert.entityToDetailResponse(latestUser);
+        userCacheService.saveUser(latestUser.getId(), result);  // 缓存用户详情到Redis中
+
+        return result;
 
     }
 

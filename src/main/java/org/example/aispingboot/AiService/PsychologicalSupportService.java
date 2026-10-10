@@ -40,7 +40,7 @@ public class PsychologicalSupportService {
         ConsultationSession consultationSession = consultationSessionService.createSession(userId, createDTO);
 
         // 将初始用户消息保存到Message表
-        consultationMessageService.saveUserMessage(consultationSession.getId(), createDTO.getInitialMessage(), null);
+        //consultationMessageService.saveUserMessage(consultationSession.getId(), createDTO.getInitialMessage(), null);
 
         // 创建会话信息
         String sessionId = "session_" + consultationSession.getId();//创建数据库会话，获得会话ID
@@ -55,7 +55,7 @@ public class PsychologicalSupportService {
         );//创建会话后的返回信息给前端，前端保存会话id，后续请求时需要传递会话id，包含会话ID、用户ID、初始消息、开始时间、过期时间、消息数量、状态等
     }//创建一次咨询，并生成 sessionId 作为会话ID
     //Flux<String>代表一条持续的数据流，用于发布对话中的消息，包括用户消息和AI回复
-    public Flux<String> streamPsychologicalChat(String sessionId, String userMessage) {
+    public Flux<String> streamPsychologicalChat(Long userId, String sessionId, String userMessage) {
         //Flux.create() 方法是 Reactor 的响应式编程,用于处理异步事件流，如对话中的用户消息和AI回复
         // 创建响应流
         return Flux.create(sink -> { //sink理解为一个数据发送通道
@@ -63,20 +63,26 @@ public class PsychologicalSupportService {
             // sink.complete(); // 完成流
             // sink.error(exception); // 发布错误
             Long dbSessionId = extractSessionId(sessionId);  // 从会话ID中提取数据库会话ID
-            if (dbSessionId == null) {
+            ConsultationSession session =
+                    consultationSessionService.getSessionById(dbSessionId);
+            if (session == null) {
                 sink.error(new RuntimeException("会话ID格式错误"));
+                return;
+            }
+            if (!session.getUserId().equals(userId)) {
+                sink.error(new RuntimeException("会话ID与用户ID不匹配"));
                 return;
             }
             // 是否为初始消息
             boolean isInitialMessage = false;  //防止重复保存初始消息
             // 检查是否为初始消息，避免重复保存
-            Integer messageCount = consultationMessageService.getMessageCountBySessionId(dbSessionId);
-            if (messageCount == 1) {
-               ConsultationMessageResponseDTO lastMessage = consultationMessageService.getLastMessageBySessionId(dbSessionId);
-                if (lastMessage != null && lastMessage.getSenderType() == 1 && userMessage.equals(lastMessage.getContent())) {
+            //Integer messageCount = consultationMessageService.getMessageCountBySessionId(dbSessionId);
+            //if (messageCount == 1) {
+            ConsultationMessageResponseDTO lastMessage = consultationMessageService.getLastMessageBySessionId(dbSessionId);
+            if (lastMessage != null && lastMessage.getSenderType() == 1 && userMessage.equals(lastMessage.getContent())) {
                     isInitialMessage = true;
                 }
-            }
+            //}
             if (!isInitialMessage) {
                 // 保存用户消息到数据库
                 consultationMessageService.saveUserMessage(dbSessionId, userMessage, null);
@@ -84,11 +90,8 @@ public class PsychologicalSupportService {
 
             // 进行流式对话
             // 生成对话记忆管理
-            String conversationId = "conversation_" + sessionId;  //不是给数据库用的，而是给AI用的，用于记录当前会话的上下文
-            // 构建系统提示词
-            List<Message> userMessages = new ArrayList<>();  //创建一个空的用户消息列表，用于存储用户发送的消息
-            userMessages.add(new UserMessage(userMessage));//数据库保存聊天记录 ≠ AI记住聊天上下文，userMessage用户当前输入的一句话，new UserMessage(userMessage)Spring AI对象，把用户输入包装成AI消息
-            chatMemory.add(conversationId, userMessages);//chatMemory指向MessageWindowChatMemory对象，用于记录当前会话的上下文
+            String conversationId =
+                    "user_" + userId + "_conversation_" + sessionId;  //不是给数据库用的，而是给AI用的，用于记录当前会话的上下文
             Prompt prompt = new Prompt(List.of(//new Prompt创建Prompt，是对象消息集合，发送给模型的提示结构
                     new SystemMessage(PromptManage.PSYCHOLOGICAL_SUPPORT_SYSTEM_PROMPT)
             ));//new SystemMessage是在设定AI人格时，用于指定AI的行为和特征，这里设定为心理健康助手，用于提供心理健康支持
@@ -110,10 +113,7 @@ public class PsychologicalSupportService {
                         String completeRes = fullResponse.toString();
                         // 将AI返回的完整内容保存到数据库
                         consultationMessageService.saveAimessage(dbSessionId, completeRes, "openai");
-                        // 添加AI回复到chatMemory
-                        List<Message> aiMessages = new ArrayList<>();//创建一个空的AI消息列表，用于存储AI回复的消息
-                        aiMessages.add(new AssistantMessage(completeRes));//将AI回复的消息添加到AI消息列表中
-                        chatMemory.add(conversationId, aiMessages);//将AI消息列表添加到chatMemory中,用于记录当前会话的上下文
+
 
                         sink.complete();  //完成流，通知订阅者数据发送完成,告诉前端数据发送完成
                     })
