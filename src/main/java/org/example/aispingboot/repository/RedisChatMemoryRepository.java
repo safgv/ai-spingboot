@@ -3,6 +3,7 @@ package org.example.aispingboot.repository;
 import com.fasterxml.jackson.core.type.TypeReference;
 import jakarta.annotation.Resource;
 import org.example.aispingboot.DTO.cache.ChatMemoryMessageDTO;
+import org.example.aispingboot.consts.RedisKeyConsts;
 import org.example.aispingboot.service.RedisService;
 import org.springframework.ai.chat.memory.ChatMemoryRepository;
 import org.springframework.ai.chat.messages.AssistantMessage;
@@ -20,8 +21,6 @@ public class RedisChatMemoryRepository
         implements ChatMemoryRepository {
 
 
-    private static final String KEY_PREFIX =
-            "chat:memory:";
 
 
     @Resource
@@ -55,7 +54,7 @@ public class RedisChatMemoryRepository
         );
 
         String key =
-                KEY_PREFIX + conversationId;
+                RedisKeyConsts.CHAT_MEMORY + conversationId;
 
 
         List<ChatMemoryMessageDTO> dtoList =
@@ -156,7 +155,7 @@ public class RedisChatMemoryRepository
         System.out.println("==============================完");
 
         String key =
-                KEY_PREFIX + conversationId;
+                RedisKeyConsts.CHAT_MEMORY + conversationId;
 
 
         List<ChatMemoryMessageDTO> dtoList =
@@ -193,7 +192,7 @@ public class RedisChatMemoryRepository
     ){
 
         redisService.delete(
-                KEY_PREFIX + conversationId
+                RedisKeyConsts.CHAT_MEMORY + conversationId
         );
 
     }

@@ -3,6 +3,7 @@ package org.example.aispingboot.controller;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import jakarta.annotation.Resource;
 import jakarta.validation.Valid;
+import lombok.extern.slf4j.Slf4j;
 import org.example.aispingboot.DTO.command.UserLoginCommandDTO;
 import org.example.aispingboot.DTO.command.UserRegisterCommandDTO;
 import org.example.aispingboot.DTO.command.UserUpdateCommandDTO;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/user")
+@Slf4j
 public class UserController {
     @Resource
     private UserService userService;
@@ -55,11 +57,20 @@ public class UserController {
     // 更新用户信息接口
     @PutMapping("/update")
     public Result<UserLoginResponseDTO.UserDetailResponseDTO> updateUser(@Valid @RequestBody UserUpdateCommandDTO commandDTO) {
+        String token = JwtTokenUtil.getCurrentToken();  // 当前请求中的token
+
+        DecodedJWT jwt = JwtTokenUtil.verifyToken(token);  // 验证token，返回解码后的JWT对象
+
+        Long userId = jwt.getClaim("userId").asLong();  // 从解码后的JWT对象中获取用户id
+
+        commandDTO.setId(userId);  // 将用户id赋值给更新命令DTO的id字段
+
         UserLoginResponseDTO.UserDetailResponseDTO result = userService.updateUser(commandDTO);
         return Result.ok(result);
     }
 
     // 用户退出登录接口
+
     @PostMapping("/logout")
     public Result<?> logout() {
 
@@ -76,6 +87,7 @@ public class UserController {
         // 清除security context
         SecurityContextHolder.clearContext();
 
+        log.info("退出登录成功");
 
         // 调用服务层退出登录方法
         return Result.ok();
