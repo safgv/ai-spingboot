@@ -113,11 +113,28 @@ public class RedisService {
 
     }
 
+    /**
+     * Redis自增
+     */
+    public Long increment(String key){
+
+        return redisTemplate.opsForValue().increment(key);
+
+    }
+
+
+    /**
+     * 设置过期时间
+     */
+    public void expire(String key, long timeout, TimeUnit unit){
+
+        redisTemplate.expire(key, timeout, unit);
+
+    }
+
     public String getString(String key){
 
-        Object value =
-                redisTemplate.opsForValue()
-                        .get(key);
+        Object value = redisTemplate.opsForValue().get(key);
 
         return value == null ?
                 null :

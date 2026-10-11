@@ -27,6 +27,9 @@ public enum ResultCode {
     ACCOUNT_SAME("6001", "用户名已存在"),
     USER_NOT_EXIST("6002", "用户不存在"),
 
+    // AI聊天相关错误
+    AI_CHAT_RATE_LIMIT("429", "请求过于频繁，请稍后再试"),
+
     // token相关错误
     TOKEN_INVALID("A0230", "token无效"),
     TOKEN_EXPIRED("A0231", "token已过期"),

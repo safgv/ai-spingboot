@@ -27,9 +27,16 @@ public class RedisKeyConsts {
     public static final String JWT_BLACKLIST =
             "jwt:blacklist:";
 
+    /**
+     * AI聊天限流
+     */
+    public static final String AI_CHAT_RATE_LIMIT =
+            "rate_limit:ai_chat:";
+
 
     private RedisKeyConsts(){
 
     }
+
 
 }
