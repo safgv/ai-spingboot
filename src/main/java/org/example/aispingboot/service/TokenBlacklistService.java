@@ -1,14 +1,11 @@
 package org.example.aispingboot.service;
 import jakarta.annotation.Resource;
+import org.example.aispingboot.consts.RedisKeyConsts;
+import org.example.aispingboot.util.TokenHashUtil;
 import org.springframework.stereotype.Service;
 
 @Service
 public class TokenBlacklistService {
-
-
-    private static final String PREFIX =
-            "jwt:blacklist:";
-
 
     @Resource
     private RedisService redisService;
@@ -21,7 +18,7 @@ public class TokenBlacklistService {
     ){
 
         redisService.set(
-                PREFIX + token,
+                RedisKeyConsts.JWT_BLACKLIST + TokenHashUtil.hash(token),
                 "1",
                 expireTime
         );
@@ -33,7 +30,7 @@ public class TokenBlacklistService {
     public boolean isBlacklist(String token){
 
         return redisService.hasKey(
-                PREFIX + token
+                RedisKeyConsts.JWT_BLACKLIST + TokenHashUtil.hash(token)
         );
 
     }

@@ -27,11 +27,14 @@ public enum ResultCode {
     ACCOUNT_SAME("6001", "用户名已存在"),
     USER_NOT_EXIST("6002", "用户不存在"),
 
+    // AI聊天相关错误
+    AI_CHAT_RATE_LIMIT("429", "请求过于频繁，请稍后再试"),
+
     // token相关错误
     TOKEN_INVALID("A0230", "token无效"),
-    TOKEN_EXPIRED("A0230", "token已过期"),
-    TOKEN_BLOCKED("A0230", "token已加入黑名单"),
-    TOKEN_ACCESS_FORBIDDEN("A0231", "token已被禁止访问"),
+    TOKEN_EXPIRED("A0231", "token已过期"),
+    TOKEN_BLOCKED("A0232", "token已加入黑名单"),
+    TOKEN_ACCESS_FORBIDDEN("A0233", "token已被禁止访问"),
     AUTHORIZED_ERROR("A0300", "访问权限异常"),
     ACCESS_UNAUTHORIZED("A0301", "访问未授权");
 

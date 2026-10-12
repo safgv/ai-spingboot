@@ -3,6 +3,7 @@ package org.example.aispingboot.repository;
 import com.fasterxml.jackson.core.type.TypeReference;
 import jakarta.annotation.Resource;
 import org.example.aispingboot.DTO.cache.ChatMemoryMessageDTO;
+import org.example.aispingboot.consts.RedisKeyConsts;
 import org.example.aispingboot.service.RedisService;
 import org.springframework.ai.chat.memory.ChatMemoryRepository;
 import org.springframework.ai.chat.messages.AssistantMessage;
@@ -20,8 +21,6 @@ public class RedisChatMemoryRepository
         implements ChatMemoryRepository {
 
 
-    private static final String KEY_PREFIX =
-            "chat:memory:";
 
 
     @Resource
@@ -49,8 +48,13 @@ public class RedisChatMemoryRepository
             String conversationId
     ){
 
+        System.out.println(
+                "读取Redis聊天记录:"
+                        + conversationId
+        );
+
         String key =
-                KEY_PREFIX + conversationId;
+                RedisKeyConsts.CHAT_MEMORY + conversationId;
 
 
         List<ChatMemoryMessageDTO> dtoList =
@@ -131,8 +135,27 @@ public class RedisChatMemoryRepository
             List<Message> messages
     ){
 
+        System.out.println("==============================");
+        System.out.println("进入 RedisChatMemoryRepository.saveAll()");
+        System.out.println("conversationId = " + conversationId);
+        System.out.println("消息数量 = " + messages.size());
+
+        for(Message message : messages){
+
+            System.out.println(
+                    "消息类型 = "
+                            + message.getMessageType()
+                            +
+                            " 内容 = "
+                            + message.getText()
+            );
+
+        }
+
+        System.out.println("==============================完");
+
         String key =
-                KEY_PREFIX + conversationId;
+                RedisKeyConsts.CHAT_MEMORY + conversationId;
 
 
         List<ChatMemoryMessageDTO> dtoList =
@@ -169,7 +192,7 @@ public class RedisChatMemoryRepository
     ){
 
         redisService.delete(
-                KEY_PREFIX + conversationId
+                RedisKeyConsts.CHAT_MEMORY + conversationId
         );
 
     }

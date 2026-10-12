@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import java.util.stream.Collectors;
 
 @RestControllerAdvice
-public class GlobarExceptionHandler {
+public class GlobalExceptionHandler {
     // 处理参数校验异常
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public Result<String> handlerException(MethodArgumentNotValidException e) {
@@ -28,5 +28,16 @@ public class GlobarExceptionHandler {
             return Result.error(e.getCode(), e.getMessage(), e.getData());
         }
         return Result.error(e.getCode(), e.getMessage(), null);
+    }
+
+    @ExceptionHandler(Exception.class)
+    public Result<?> handleException(Exception e){
+
+        return Result.error(
+                ResultCode.SYSTEM_ERROR.getCode(),
+                "系统异常",
+                null
+        );
+
     }
 }

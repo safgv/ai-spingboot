@@ -7,6 +7,7 @@ import jakarta.annotation.Resource;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 
@@ -112,15 +113,58 @@ public class RedisService {
 
     }
 
+    /**
+     * Redis自增
+     */
+    public Long increment(String key){
+
+        return redisTemplate.opsForValue().increment(key);
+
+    }
+
+
+    /**
+     * 设置过期时间
+     */
+    public void expire(String key, long timeout, TimeUnit unit){
+
+        redisTemplate.expire(key, timeout, unit);
+
+    }
+
     public String getString(String key){
 
-        Object value =
-                redisTemplate.opsForValue()
-                        .get(key);
+        Object value = redisTemplate.opsForValue().get(key);
 
         return value == null ?
                 null :
                 value.toString();
+
+    }
+
+    public void leftPush(
+            String key,
+            Object value
+    ){
+
+        redisTemplate.opsForList()
+                .leftPush(
+                        key,
+                        value
+                );
+
+    }
+
+    public List<Object> getList(
+            String key
+    ){
+
+        return redisTemplate.opsForList()
+                .range(
+                        key,
+                        0,
+                        -1
+                );
 
     }
 
