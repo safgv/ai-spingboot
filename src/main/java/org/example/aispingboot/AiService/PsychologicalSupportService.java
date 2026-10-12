@@ -1,23 +1,21 @@
 package org.example.aispingboot.AiService;
 
+import jakarta.annotation.Resource;
 import org.example.aispingboot.DTO.command.ConsultationSessionCreateDTO;
 import org.example.aispingboot.DTO.response.ConsultationMessageResponseDTO;
 import org.example.aispingboot.entity.ConsultationSession;
 import org.example.aispingboot.service.ConsultationMessageService;
 import org.example.aispingboot.service.ConsultationSessionService;
+import org.example.aispingboot.service.EmotionSummaryService;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.memory.ChatMemory;
-import org.springframework.ai.chat.messages.AssistantMessage;
-import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.chat.messages.SystemMessage;
-import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -34,6 +32,13 @@ public class PsychologicalSupportService {
 
     @Autowired
     private ConsultationMessageService consultationMessageService;
+
+
+    @Resource
+    private EmotionAnalysisService emotionAnalysisService;
+
+    @Resource
+    private EmotionSummaryService emotionSummaryService;
 
     public StructOutPut.StreamChatSession startSession(Long userId, ConsultationSessionCreateDTO createDTO) {
         // 创建数据库会话记录，consultationSessionService.createSession(userId, createDTO)得到一个entity层的实体类ConsultationSession对象session
@@ -75,17 +80,31 @@ public class PsychologicalSupportService {
             }
             // 是否为初始消息
             boolean isInitialMessage = false;  //防止重复保存初始消息
-            // 检查是否为初始消息，避免重复保存
-            //Integer messageCount = consultationMessageService.getMessageCountBySessionId(dbSessionId);
-            //if (messageCount == 1) {
             ConsultationMessageResponseDTO lastMessage = consultationMessageService.getLastMessageBySessionId(dbSessionId);
             if (lastMessage != null && lastMessage.getSenderType() == 1 && userMessage.equals(lastMessage.getContent())) {
                     isInitialMessage = true;
                 }
+
             //}
             if (!isInitialMessage) {
+
+                System.out.println(
+                        "进入用户消息保存流程"
+                );
+                String emotionTag;
+                try {
+                    emotionTag = emotionAnalysisService.analyze(userMessage);
+                } catch (Exception e) {
+                    emotionTag = "未分析到情绪";
+                }
+
+                System.out.println(
+                        "情绪结果="
+                                + emotionTag
+                );
+
                 // 保存用户消息到数据库
-                consultationMessageService.saveUserMessage(dbSessionId, userMessage, null);
+                consultationMessageService.saveUserMessage(dbSessionId, userMessage, emotionTag);
             }
 
             // 进行流式对话
@@ -113,6 +132,9 @@ public class PsychologicalSupportService {
                         String completeRes = fullResponse.toString();
                         // 将AI返回的完整内容保存到数据库
                         consultationMessageService.saveAimessage(dbSessionId, completeRes, "openai");
+
+                        // 更新会话情绪总结,异步执行
+                        emotionSummaryService.updateEmotionSummary(dbSessionId);
 
 
                         sink.complete();  //完成流，通知订阅者数据发送完成,告诉前端数据发送完成

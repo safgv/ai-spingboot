@@ -1,6 +1,5 @@
 package org.example.aispingboot.service;
 
-import cn.hutool.core.date.DateUnit;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
@@ -28,6 +27,7 @@ public class ConsultationSessionService {
 
     @Autowired
     private ConsultationMessageService consultationMessageService;
+
 
     public ConsultationSession createSession(Long userId, ConsultationSessionCreateDTO createDTO) {
         // 验证用户是否存在
@@ -102,9 +102,7 @@ public class ConsultationSessionService {
                             .getMessageCountBySessionId(session.getId())
             );
 
-            ConsultationMessageResponseDTO last =
-                    consultationMessageService
-                            .getLastMessageBySessionId(session.getId());
+            ConsultationMessageResponseDTO last = consultationMessageService.getLastMessageBySessionId(session.getId());
 
 
             if(last != null){
@@ -117,4 +115,53 @@ public class ConsultationSessionService {
 
         return result;
     }
+
+    public ConsultationSessionResponseDTO.SessionDetailResponseDTO getSessionDetail(Long sessionId){
+
+        ConsultationSession session = consultationSessionMapper.selectById(sessionId);
+
+
+        if(session == null){
+
+            return null;
+
+        }
+
+        ConsultationSessionResponseDTO.SessionDetailResponseDTO dto = new ConsultationSessionResponseDTO.SessionDetailResponseDTO();
+
+        dto.setSessionId("session_" + session.getId());
+
+        dto.setSessionTitle(session.getSessionTitle());
+
+        dto.setStartedAt(session.getStartedAt());
+
+        dto.setLastEmotionAnalysis(session.getLastEmotionAnalysis());
+
+        dto.setLastEmotionUpdatedAt(session.getLastEmotionUpdatedAt());
+
+        dto.setMessages(consultationMessageService.getMessagesBySessionId(sessionId));
+
+
+        return dto;
+
+    }
+
+    public void updateEmotionSummary(
+            Long sessionId,
+            String summary
+    ){
+
+        ConsultationSession session = consultationSessionMapper.selectById(sessionId);
+
+
+        session.setLastEmotionAnalysis(summary);
+
+        session.setLastEmotionUpdatedAt(LocalDateTime.now());
+
+
+        consultationSessionMapper.updateById(session);
+
+    }
+
+
 }

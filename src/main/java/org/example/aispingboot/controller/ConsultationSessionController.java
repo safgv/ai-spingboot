@@ -59,6 +59,59 @@ public class ConsultationSessionController {
         return Result.ok(consultationSessionService.getUserSessions(userId));
     }
 
+    @GetMapping("/sessions/{sessionId}")
+    public Result<ConsultationSessionResponseDTO.SessionDetailResponseDTO> getSessionDetail(@PathVariable String sessionId){
+
+        // 获取当前用户
+        String token = JwtTokenUtil.getCurrentToken();
+
+        DecodedJWT jwt = JwtTokenUtil.verifyToken(token);
+
+        Long userId = jwt.getClaim("userId").asLong();
+
+
+        // session_43 -> 43
+        Long dbSessionId = psychologicalSupportService.extractSessionId(sessionId);
+
+
+        if(dbSessionId == null){
+
+            throw new BusinessException(
+                    "会话ID格式错误"
+            );
+
+        }
+
+
+        // 查询会话
+        ConsultationSession session = consultationSessionService.getSessionById(dbSessionId);
+
+
+        if(session == null){
+
+            throw new BusinessException(
+                    "会话不存在"
+            );
+
+        }
+
+        // 用户隔离校验
+        if(!session.getUserId().equals(userId)){
+
+
+            throw new BusinessException(
+                    ResultCode.AUTHORIZED_ERROR.getCode(),
+                    "无权访问该会话"
+            );
+
+        }
+
+        return Result.ok(consultationSessionService.getSessionDetail(dbSessionId)
+        );
+
+    }
+
+
     @GetMapping("/sessions/{sessionId}/messages")
     public Result<List<ConsultationMessageResponseDTO>> getMessages(
             @PathVariable String sessionId

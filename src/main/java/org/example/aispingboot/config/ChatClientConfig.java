@@ -30,4 +30,12 @@ public class ChatClientConfig {
                 .defaultAdvisors(MessageChatMemoryAdvisor.builder(chatMemory()).build())
                 .defaultSystem("你是一个专业的心理疏导师，温和耐心，善于倾听，能够提供专业的心理支持和建议").build();
     }//基础配置，用于创建ChatClient对象，用于与OpenAI API交互
+
+    @Bean("emotion-ai")
+    public ChatClient emotionChatClient(OpenAiChatModel openAiChatModel){
+
+        return ChatClient.builder(openAiChatModel)
+                .build();
+
+    }
 }

@@ -124,4 +124,31 @@ public class ConsultationMessageService {
                 .map(this::convertToResponseDTO)
                 .toList();
     }
+
+    public List<ConsultationMessage> getUserMessagesBySessionId(
+            Long sessionId
+    ){
+
+        LambdaQueryWrapper<ConsultationMessage> wrapper =
+                new LambdaQueryWrapper<>();
+
+        wrapper.eq(
+                ConsultationMessage::getSessionId,
+                sessionId
+        );
+
+        // 只查询用户消息
+        wrapper.eq(
+                ConsultationMessage::getSenderType,
+                1
+        );
+
+        wrapper.orderByAsc(
+                ConsultationMessage::getCreatedAt
+        );
+
+
+        return consultationMessageMapper.selectList(wrapper);
+
+    }
 }
